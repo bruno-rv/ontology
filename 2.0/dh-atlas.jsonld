@@ -1010,7 +1010,7 @@
     "@value" : "The ATLAS Ontology"
   } ],
   "http://www.w3.org/2002/07/owl#priorVersion" : [ {
-    "@id" : "https://w3id.org/dh-atlas/"
+    "@id" : "http://www.w3id.org/dh-atlas/1.0"
   } ],
   "http://www.w3.org/2002/07/owl#versionIRI" : [ {
     "@id" : "https://w3id.org/dh-atlas/2.0"

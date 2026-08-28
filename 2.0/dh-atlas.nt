@@ -16,7 +16,7 @@
 <https://w3id.org/dh-atlas/> <http://purl.org/dc/elements/1.1/rights> <https://w3id.org/italia/controlled-vocabulary/licences/B11_CCBYNC40> .
 <https://w3id.org/dh-atlas/> <http://purl.org/dc/terms/modified> "2025-08-06"^^<http://www.w3.org/2001/XMLSchema#date> .
 <https://w3id.org/dh-atlas/> <http://www.w3.org/2000/01/rdf-schema#label> "The ATLAS Ontology" .
-<https://w3id.org/dh-atlas/> <http://www.w3.org/2002/07/owl#priorVersion> <https://w3id.org/dh-atlas/> .
+<https://w3id.org/dh-atlas/> <http://www.w3.org/2002/07/owl#priorVersion> <http://www.w3id.org/dh-atlas/1.0> .
 <https://w3id.org/dh-atlas/> <http://www.w3.org/2002/07/owl#versionInfo> "2.0"^^<http://www.w3.org/2001/XMLSchema#decimal> .
 # 
 # 

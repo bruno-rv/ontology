@@ -8,7 +8,7 @@
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
     <owl:Ontology rdf:about="http://www.w3id.org/dh-atlas/">
-        <owl:versionIRI rdf:resource="http://www.w3id.org/dh-atlas/"/>
+        <owl:versionIRI rdf:resource="http://www.w3id.org/dh-atlas/1.0"/>
         <dc:contributor>Alessia Bardi</dc:contributor>
         <dc:contributor>Angelo Mario Del Grosso</dc:contributor>
         <dc:contributor>Chiara Martignano</dc:contributor>

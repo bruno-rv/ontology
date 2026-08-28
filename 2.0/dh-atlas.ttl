@@ -26,7 +26,7 @@ Built upon a Schema.org backbone, the ATLAS Ontology incorporates both general-p
                               <http://purl.org/dc/elements/1.1/rights> <https://w3id.org/italia/controlled-vocabulary/licences/B11_CCBYNC40> ;
                               <http://purl.org/dc/terms/modified> "2025-08-06"^^xsd:date ;
                               rdfs:label "The ATLAS Ontology" ;
-                              owl:priorVersion <https://w3id.org/dh-atlas/> ;
+                              owl:priorVersion <http://www.w3id.org/dh-atlas/1.0> ;
                               owl:versionInfo 2.0 .
 
 #################################################################

@@ -28,7 +28,7 @@ Built upon a Schema.org backbone, the ATLAS Ontology incorporates both general-p
         <dc:rights rdf:resource="https://w3id.org/italia/controlled-vocabulary/licences/B11_CCBYNC40"/>
         <terms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2025-08-06</terms:modified>
         <rdfs:label>The ATLAS Ontology</rdfs:label>
-        <owl:priorVersion rdf:resource="https://w3id.org/dh-atlas/"/>
+        <owl:priorVersion rdf:resource="http://www.w3id.org/dh-atlas/1.0"/>
         <owl:versionInfo rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">2.0</owl:versionInfo>
     </owl:Ontology>
     
