@@ -3,11 +3,11 @@
 
 
 **Version:** 2.0  
-**Version IRI:** https://www.w3id.org/dh-atlas/2.0  
-**Official Namespace IRI:** https://www.w3id.org/dh-atlas/  
+**Version IRI:** https://w3id.org/dh-atlas/2.0  
+**Official Namespace IRI:** https://w3id.org/dh-atlas/  
 **Authors:** Sebastiano Giacomini, Marilena Daquino, Francesca Tomasi  
-**Contributors:** Alessia Bardi, Angelo Mario Del Grosso, Chiara Martignano, Franz Fischer, Giorgia Rubin, Marina Buzzoni, Riccardo Del Gratta, Roberto Rosselli Del Turco  
-**License:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+**Contributors:** Alessia Bardi, Angelo Mario Del Grosso, Chiara Martignano, Franz Fischer, Giorgia Rubin, Marina Buzzoni, Riccardo Del Gratta, Roberto Rosselli del Turco  
+**License:** [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
 
 ---
 

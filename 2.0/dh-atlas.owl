@@ -634,10 +634,10 @@ Written works such as books may sometimes have precise temporal coverage too, e.
     
 
 
-    <!-- https://www.w3id.org/dh-atlas/methodology -->
+    <!-- https://w3id.org/dh-atlas/methodology -->
 
 
-    <owl:ObjectProperty rdf:about="https://www.w3id.org/dh-atlas/methodology">
+    <owl:ObjectProperty rdf:about="https://w3id.org/dh-atlas/methodology">
         <rdfs:domain rdf:resource="https://schema.org/Dataset"/>
         <dc:description xml:lang="en">Usage note: values from external vocabularies and defined terms should be preferred. ATLAS recommends using terms from the [TaDiRAH taxonomy](https://vocabs.dariah.eu/tadirah/).</dc:description>
         <rdfs:comment xml:lang="en">Research activities performed to realize the research product. </rdfs:comment>

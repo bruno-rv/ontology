@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this ontology, please cite it using the metadata below."
+title: "The ATLAS Ontology"
+authors:
+  - family-names: Giacomini
+    given-names: Sebastiano
+  - family-names: Daquino
+    given-names: Marilena
+  - family-names: Tomasi
+    given-names: Francesca
+version: 2.0
+doi: 10.5281/zenodo.16780282
+license: CC-BY-NC-4.0
+date-released: "2025-08-06"
+abstract: "An OWL 2 DL ontology developed to represent scholarly research projects and their outcomes in the domain of Cultural Heritage."
+keywords:
+  - digital humanities
+  - cultural heritage
+  - ontology
+  - linked open data
+repository-code: "https://github.com/dh-atlas/ontology"

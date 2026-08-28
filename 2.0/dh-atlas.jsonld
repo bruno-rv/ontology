@@ -1261,7 +1261,7 @@
     "@value" : "vocabulary"
   } ]
 }, {
-  "@id" : "https://www.w3id.org/dh-atlas/methodology",
+  "@id" : "https://w3id.org/dh-atlas/methodology",
   "@type" : [ "http://www.w3.org/2002/07/owl#ObjectProperty" ],
   "http://purl.org/dc/elements/1.1/description" : [ {
     "@language" : "en",

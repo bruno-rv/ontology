@@ -409,12 +409,12 @@ Written works such as books may sometimes have precise temporal coverage too, e.
             rdfs:label "vocabulary"@en .
 
 
-###  https://www.w3id.org/dh-atlas/methodology
-<https://www.w3id.org/dh-atlas/methodology> rdf:type owl:ObjectProperty ;
-                                            rdfs:domain <https://schema.org/Dataset> ;
-                                            <http://purl.org/dc/elements/1.1/description> "Usage note: values from external vocabularies and defined terms should be preferred. ATLAS recommends using terms from the [TaDiRAH taxonomy](https://vocabs.dariah.eu/tadirah/)."@en ;
-                                            rdfs:comment "Research activities performed to realize the research product. "@en ;
-                                            rdfs:label "methodology"@en .
+###  https://w3id.org/dh-atlas/methodology
+<https://w3id.org/dh-atlas/methodology> rdf:type owl:ObjectProperty ;
+                                        rdfs:domain <https://schema.org/Dataset> ;
+                                        <http://purl.org/dc/elements/1.1/description> "Usage note: values from external vocabularies and defined terms should be preferred. ATLAS recommends using terms from the [TaDiRAH taxonomy](https://vocabs.dariah.eu/tadirah/)."@en ;
+                                        rdfs:comment "Research activities performed to realize the research product. "@en ;
+                                        rdfs:label "methodology"@en .
 
 
 #################################################################

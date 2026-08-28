@@ -358,12 +358,12 @@
 <https://w3id.org/dh-atlas/vocabulary> <http://www.w3.org/2000/01/rdf-schema#comment> "A vocabulary or owl:Ontology whose classes or properties are used in a Linked Open Data dataset."@en .
 <https://w3id.org/dh-atlas/vocabulary> <http://www.w3.org/2000/01/rdf-schema#label> "vocabulary"@en .
 # 
-# https://www.w3id.org/dh-atlas/methodology
-<https://www.w3id.org/dh-atlas/methodology> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
-<https://www.w3id.org/dh-atlas/methodology> <http://www.w3.org/2000/01/rdf-schema#domain> <https://schema.org/Dataset> .
-<https://www.w3id.org/dh-atlas/methodology> <http://purl.org/dc/elements/1.1/description> "Usage note: values from external vocabularies and defined terms should be preferred. ATLAS recommends using terms from the [TaDiRAH taxonomy](https://vocabs.dariah.eu/tadirah/)."@en .
-<https://www.w3id.org/dh-atlas/methodology> <http://www.w3.org/2000/01/rdf-schema#comment> "Research activities performed to realize the research product. "@en .
-<https://www.w3id.org/dh-atlas/methodology> <http://www.w3.org/2000/01/rdf-schema#label> "methodology"@en .
+# https://w3id.org/dh-atlas/methodology
+<https://w3id.org/dh-atlas/methodology> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
+<https://w3id.org/dh-atlas/methodology> <http://www.w3.org/2000/01/rdf-schema#domain> <https://schema.org/Dataset> .
+<https://w3id.org/dh-atlas/methodology> <http://purl.org/dc/elements/1.1/description> "Usage note: values from external vocabularies and defined terms should be preferred. ATLAS recommends using terms from the [TaDiRAH taxonomy](https://vocabs.dariah.eu/tadirah/)."@en .
+<https://w3id.org/dh-atlas/methodology> <http://www.w3.org/2000/01/rdf-schema#comment> "Research activities performed to realize the research product. "@en .
+<https://w3id.org/dh-atlas/methodology> <http://www.w3.org/2000/01/rdf-schema#label> "methodology"@en .
 # 
 # 
 # 
