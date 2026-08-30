@@ -88,6 +88,21 @@ test("rejects absolute, protocol-relative, and non-canonical source URLs", () =>
   );
 });
 
+test("rejects parser-equivalent sources with whitespace or backslashes", () => {
+  assert.throws(
+    () => validateVersionsManifest({ versions: [{ ...expectedVersions[0], source: " https://atlas.example/1.0/dh-atlas.jsonld" }] }),
+    /relative/i,
+  );
+  assert.throws(
+    () => validateVersionsManifest({ versions: [{ ...expectedVersions[0], source: " //atlas.example/1.0/dh-atlas.jsonld" }] }),
+    /relative/i,
+  );
+  assert.throws(
+    () => validateVersionsManifest({ versions: [{ ...expectedVersions[0], source: String.raw`\\atlas.example\1.0\dh-atlas.jsonld` }] }),
+    /relative/i,
+  );
+});
+
 test("rejects subject count mismatch without mutating the last accepted graph", () => {
   const graph = {
     version: "test",
