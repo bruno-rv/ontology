@@ -43,4 +43,9 @@ Detailed information on changes introduced in version 2.0 is available in the fo
 - `2.0/`: ontology file for version 2.0  
 - `changelog.md`: textual changelog for tracking version updates  
 - `changelog.pdf`: downloadable version of the changelog in PDF format  
+- `visualization/`: source-faithful browser explorer for both ontology releases ([guide](visualization/README.md), [browser entrypoint](visualization/))
 - `README.md`: this documentation file
+
+## Visualization
+
+Use the [ATLAS Ontology Explorer guide](visualization/README.md) to run the local browser explorer, or open the [browser entrypoint](visualization/) after starting its HTTP server.
