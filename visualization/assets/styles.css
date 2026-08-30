@@ -41,11 +41,11 @@
     --paper-raised: oklch(28% 0.026 70);
     --paper-deep: oklch(19% 0.024 70);
     --ink: oklch(92% 0.022 88);
-    --ink-soft: oklch(75% 0.03 82);
-    --ink-faint: oklch(63% 0.028 78);
+    --ink-soft: oklch(84% 0.03 82);
+    --ink-faint: oklch(79% 0.028 78);
     --line: oklch(43% 0.035 72);
     --line-strong: oklch(61% 0.05 72);
-    --moss: oklch(73% 0.105 145);
+    --moss: oklch(80% 0.105 145);
     --moss-soft: oklch(31% 0.05 145);
     --vermilion: oklch(75% 0.14 36);
     --vermilion-soft: oklch(34% 0.07 36);
