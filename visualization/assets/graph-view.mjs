@@ -213,10 +213,13 @@ export function createGraphView({ container, onSelect = noop, onError = noop } =
 
   function select(selection) {
     try {
-      if (!cy || !selection || typeof selection.id !== "string") {
+      if (!cy) {
         return;
       }
       cy.elements().removeClass("is-selected").unselect();
+      if (!selection || typeof selection.id !== "string") {
+        return;
+      }
       const element = cy.getElementById(selection.id);
       if (element.nonempty()) {
         element.addClass("is-selected").select();

@@ -24,6 +24,7 @@ const FACET_KEYS = [
 ];
 
 const DEFAULT_GRAPH_FALLBACK = "The graph is an interaction aid. Use the catalog and details below to inspect every asserted value if the canvas is unavailable.";
+const ALLOWED_SOURCE_PATHS = new Set(["/1.0/dh-atlas.jsonld", "/2.0/dh-atlas.jsonld"]);
 
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -42,13 +43,22 @@ function assertPositiveCount(value, description) {
 }
 
 function assertRelativeSource(source) {
+  if (/^[a-z][a-z\d+.-]*:/i.test(source) || source.startsWith("/") || source.startsWith("//")) {
+    throw new TypeError("source must be a relative URL");
+  }
   try {
     const resolved = new URL(source, "https://atlas.example/visualization/versions.json");
-    if (resolved.origin !== "https://atlas.example" || resolved.protocol !== "https:") {
-      throw new TypeError("source must be a relative URL");
+    if (
+      resolved.origin !== "https://atlas.example" ||
+      resolved.protocol !== "https:" ||
+      resolved.search !== "" ||
+      resolved.hash !== "" ||
+      !ALLOWED_SOURCE_PATHS.has(resolved.pathname)
+    ) {
+      throw new TypeError("source must resolve to a canonical ontology input");
     }
   } catch (error) {
-    if (error instanceof TypeError && /relative URL/.test(error.message)) {
+    if (error instanceof TypeError && /canonical ontology input|relative URL/.test(error.message)) {
       throw error;
     }
     throw new TypeError("source must be a valid relative URL");
@@ -498,7 +508,10 @@ export function initializeApplication(root = document) {
       loadRelease(config);
     });
     refs.graphFit?.addEventListener("click", () => graphView.fit());
-    refs.graphReset?.addEventListener("click", () => graphView.reset());
+    refs.graphReset?.addEventListener("click", () => {
+      graphView.reset();
+      resetSelection();
+    });
     refs.graphShowValues?.addEventListener("click", () => {
       state.showLiterals = !state.showLiterals;
       refs.graphShowValues.setAttribute("aria-pressed", String(state.showLiterals));
