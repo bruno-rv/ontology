@@ -13,6 +13,7 @@ import {
   GRAPH_PALETTES,
   contrastRatio,
   createGraphView,
+  graphStyleForPalette,
 } from "../assets/graph-view.mjs";
 import { metadataOrNotAsserted } from "../assets/details-view.mjs";
 
@@ -88,11 +89,14 @@ test("same-release graph refresh updates visibility without rebuilding or relayo
   }
 });
 
-test("light and dark graph label palettes meet the small-text contrast target", () => {
+test("every light and dark Cytoscape node label style has an opaque contrast-safe background", () => {
   for (const palette of Object.values(GRAPH_PALETTES)) {
-    assert.ok(contrastRatio(palette.labelInk, palette.labelBackground) >= 4.5);
-    for (const fill of Object.values(palette.nodeFills)) {
-      assert.ok(contrastRatio(palette.nodeLabel, fill) >= 4.5);
+    const nodeStyles = graphStyleForPalette(palette).filter(({ selector }) => selector.startsWith("node"));
+    assert.ok(nodeStyles.length > 0);
+    for (const { style } of nodeStyles) {
+      assert.equal(style["text-background-opacity"], 1);
+      assert.equal(typeof style["text-background-color"], "string");
+      assert.ok(contrastRatio(style.color, style["text-background-color"]) >= 4.5);
     }
   }
 });

@@ -4,7 +4,7 @@ export const GRAPH_PALETTES = Object.freeze({
   light: Object.freeze({
     labelInk: "#25231f",
     labelBackground: "#fffaf0",
-    nodeLabel: "#fffaf0",
+    nodeLabel: "#25231f",
     selected: "#8c2414",
     edge: "#6d6253",
     nodeFills: Object.freeze({
@@ -20,7 +20,7 @@ export const GRAPH_PALETTES = Object.freeze({
   dark: Object.freeze({
     labelInk: "#f6efe0",
     labelBackground: "#25261f",
-    nodeLabel: "#172019",
+    nodeLabel: "#f6efe0",
     selected: "#ffb39a",
     edge: "#c5b8a4",
     nodeFills: Object.freeze({
@@ -69,10 +69,17 @@ function graphPalette(container) {
   return GRAPH_PALETTES.light;
 }
 
-function graphStyle(palette) {
-  const baseNode = {
-    "background-color": palette.nodeFills.resource,
+export function graphStyleForPalette(palette) {
+  const nodeLabelStyle = {
     color: palette.nodeLabel,
+    "text-background-color": palette.labelBackground,
+    "text-background-opacity": 1,
+    "text-background-padding": "2px",
+    "text-background-shape": "roundrectangle",
+  };
+  const baseNode = {
+    ...nodeLabelStyle,
+    "background-color": palette.nodeFills.resource,
     label: "data(label)",
     "font-family": "system-ui, sans-serif",
     "font-size": "11px",
@@ -91,18 +98,18 @@ function graphStyle(palette) {
     {
       selector: "node.literal",
       style: {
+        ...nodeLabelStyle,
         shape: "round-rectangle",
         "background-color": palette.nodeFills.literal,
-        color: palette.nodeLabel,
         width: 38,
         height: 25,
       },
     },
-    { selector: "node.class", style: { "background-color": palette.nodeFills.class } },
-    { selector: "node.property", style: { "background-color": palette.nodeFills.property } },
-    { selector: "node.ontology", style: { "background-color": palette.nodeFills.ontology } },
-    { selector: "node.individual", style: { "background-color": palette.nodeFills.individual } },
-    { selector: "node.datatype", style: { "background-color": palette.nodeFills.datatype } },
+    { selector: "node.class", style: { ...nodeLabelStyle, "background-color": palette.nodeFills.class } },
+    { selector: "node.property", style: { ...nodeLabelStyle, "background-color": palette.nodeFills.property } },
+    { selector: "node.ontology", style: { ...nodeLabelStyle, "background-color": palette.nodeFills.ontology } },
+    { selector: "node.individual", style: { ...nodeLabelStyle, "background-color": palette.nodeFills.individual } },
+    { selector: "node.datatype", style: { ...nodeLabelStyle, "background-color": palette.nodeFills.datatype } },
     {
       selector: "edge",
       style: {
@@ -288,7 +295,7 @@ export function createGraphView({ container, onSelect = noop, onError = noop } =
         cy = cytoscape({
           container,
           elements: graphElements(args.graph, nextShowLiterals),
-          style: graphStyle(graphPalette(container)),
+          style: graphStyleForPalette(graphPalette(container)),
         });
         graphReference = args.graph;
         showingLiterals = nextShowLiterals;

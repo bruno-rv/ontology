@@ -1,9 +1,16 @@
 async (page) => {
   const baseUrl = "http://127.0.0.1:4173/visualization/";
-  const fileUrl = "file:///Users/bruno/Dev/.codex-worktrees/ontology-visualization/visualization/index.html";
+  const runtimeDirectory = typeof process !== "undefined" && typeof process.cwd === "function"
+    ? process.cwd()
+    : "";
+  const fileUrl = runtimeDirectory
+    ? `file://${encodeURI(`${runtimeDirectory}/visualization/index.html`)}`
+    : null;
   const screenshots = {
     desktop: "/tmp/ontology-atlas-final-desktop.png",
     narrow: "/tmp/ontology-atlas-final-narrow.png",
+    graphLight: "/tmp/ontology-atlas-graph-light-final.png",
+    graphDark: "/tmp/ontology-atlas-graph-dark-final.png",
   };
   const cleanConsoleErrors = [];
   const cleanFailedRequests = [];
@@ -43,6 +50,7 @@ async (page) => {
     await page.waitForFunction(() => document.querySelector("#global-search")?.value === "");
   };
   const captureGraphStyle = async (colorScheme) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await page.emulateMedia({ colorScheme });
     await page.goto(baseUrl);
     await waitForRelease("82", "375");
@@ -66,9 +74,13 @@ async (page) => {
       nodeInk: entry("node").color,
       edgeInk: entry("edge").color,
       edgeBackground: entry("edge")["text-background-color"],
-      nodeFills: ["node", "node.literal", "node.class", "node.property", "node.ontology", "node.individual", "node.datatype"]
-        .map((selector) => entry(selector)["background-color"]),
-      nodeLabel: entry("node").color,
+      nodeLabels: ["node", "node.literal", "node.class", "node.property", "node.ontology", "node.individual", "node.datatype"]
+        .map((selector) => ({
+          selector,
+          color: entry(selector).color,
+          background: entry(selector)["text-background-color"],
+          opacity: entry(selector)["text-background-opacity"],
+        })),
     };
   };
   const luminance = (hex) => {
@@ -314,23 +326,37 @@ async (page) => {
   }
 
   const lightStyle = await captureGraphStyle("light");
+  await page.locator("#graph-canvas").screenshot({ path: screenshots.graphLight });
   const darkStyle = await captureGraphStyle("dark");
+  await page.locator("#graph-canvas").screenshot({ path: screenshots.graphDark });
   const contrast = { light: [], dark: [] };
   for (const [name, style] of [["light", lightStyle], ["dark", darkStyle]]) {
     const edgeRatio = ratio(style.edgeInk, style.edgeBackground);
-    const nodeRatios = style.nodeFills.map((fill) => ratio(style.nodeLabel, fill));
+    const nodeRatios = style.nodeLabels.map(({ color, background, opacity }) => {
+      if (opacity !== 1 || !background) {
+        fail(`${name} node label background is not opaque and explicit`);
+      }
+      return ratio(color, background);
+    });
     contrast[name] = { theme: style.theme, edgeRatio, nodeRatios };
     if (edgeRatio < 4.5 || nodeRatios.some((value) => value < 4.5)) {
       fail(`${name} Cytoscape label contrast fell below 4.5:1`);
     }
   }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });
+  await page.goto(baseUrl);
+  await waitForRelease("82", "375");
   await page.screenshot({ path: screenshots.desktop });
 
-  await page.goto(fileUrl);
-  await page.waitForFunction(() => document.querySelector("#load-error")?.textContent.includes("file:// is not supported"));
-  const fileProtocolMessage = await text("#load-error");
-  if (!fileProtocolMessage.includes("python3 -m http.server 4173 --bind 127.0.0.1") || !fileProtocolMessage.includes("http://127.0.0.1:4173/visualization/")) {
-    fail("file protocol message omitted the local HTTP remedy");
+  let fileProtocolMessage = "Not run: process.cwd() was unavailable to the CLI artifact.";
+  if (fileUrl) {
+    await page.goto(fileUrl);
+    await page.waitForFunction(() => document.querySelector("#load-error")?.textContent.includes("file:// is not supported"));
+    fileProtocolMessage = await text("#load-error");
+    if (!fileProtocolMessage.includes("python3 -m http.server 4173 --bind 127.0.0.1") || !fileProtocolMessage.includes("http://127.0.0.1:4173/visualization/")) {
+      fail("file protocol message omitted the local HTTP remedy");
+    }
   }
   cleanConsoleErrors.length = 0;
   cleanFailedRequests.length = 0;
