@@ -4,6 +4,13 @@ const RDFS_LABEL = "http://www.w3.org/2000/01/rdf-schema#label";
 const RDFS_COMMENT = "http://www.w3.org/2000/01/rdf-schema#comment";
 export const NOT_ASSERTED = "Not asserted";
 
+export function metadataOrNotAsserted(value) {
+  if (Array.isArray(value)) {
+    return value.length === 0 ? NOT_ASSERTED : value;
+  }
+  return value === undefined || value === null ? NOT_ASSERTED : value;
+}
+
 function valueOrNotAsserted(value) {
   return value === undefined ? NOT_ASSERTED : value;
 }
@@ -199,17 +206,18 @@ function appendDefinition(parent, label, value, { copy, onCopy } = {}) {
   parent.append(term);
 
   const description = document.createElement("dd");
-  if (Array.isArray(value)) {
+  const displayMetadata = metadataOrNotAsserted(value);
+  if (Array.isArray(displayMetadata)) {
     const list = document.createElement("ul");
     list.className = "detail-values";
-    for (const item of value) {
+    for (const item of displayMetadata) {
       const listItem = document.createElement("li");
       listItem.textContent = displayValue(item);
       list.append(listItem);
     }
     description.append(list);
   } else {
-    description.textContent = displayValue(value);
+    description.textContent = displayValue(displayMetadata);
   }
   if (copy && onCopy) {
     appendCopyButton(description, copy, value, onCopy);
@@ -252,9 +260,13 @@ function appendRawRecords(parent, records) {
   const section = document.createElement("section");
   section.className = "detail-raw";
   appendText(section, "h3", "Raw source records");
-  const pre = document.createElement("pre");
-  pre.textContent = JSON.stringify(records, null, 2);
-  section.append(pre);
+  if (!Array.isArray(records) || records.length === 0) {
+    appendText(section, "p", NOT_ASSERTED);
+  } else {
+    const pre = document.createElement("pre");
+    pre.textContent = JSON.stringify(records, null, 2);
+    section.append(pre);
+  }
   parent.append(section);
 }
 

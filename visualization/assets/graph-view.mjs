@@ -1,89 +1,141 @@
 import { resourceCategory, shortenIri } from "./graph-model.mjs";
 
-const STYLE = [
-  {
-    selector: "node",
-    style: {
-      "background-color": "#4d765d",
-      color: "#2e332d",
-      label: "data(label)",
-      "font-family": "system-ui, sans-serif",
-      "font-size": "11px",
-      "text-wrap": "wrap",
-      "text-max-width": "110px",
-      "text-valign": "center",
-      "text-halign": "center",
-      width: 30,
-      height: 30,
-      "border-width": 2,
-      "border-color": "#f8f4e9",
+export const GRAPH_PALETTES = Object.freeze({
+  light: Object.freeze({
+    labelInk: "#25231f",
+    labelBackground: "#fffaf0",
+    nodeLabel: "#fffaf0",
+    selected: "#8c2414",
+    edge: "#6d6253",
+    nodeFills: Object.freeze({
+      resource: "#27513e",
+      class: "#1f566d",
+      property: "#553b65",
+      ontology: "#4f5f2d",
+      individual: "#70491f",
+      datatype: "#6d3941",
+      literal: "#7d321d",
+    }),
+  }),
+  dark: Object.freeze({
+    labelInk: "#f6efe0",
+    labelBackground: "#25261f",
+    nodeLabel: "#172019",
+    selected: "#ffb39a",
+    edge: "#c5b8a4",
+    nodeFills: Object.freeze({
+      resource: "#a7d3b6",
+      class: "#a8d0de",
+      property: "#c9acd7",
+      ontology: "#c2d39a",
+      individual: "#d7b98e",
+      datatype: "#d7a8ae",
+      literal: "#e9a58c",
+    }),
+  }),
+});
+
+function channelValue(value) {
+  const normalized = value.replace(/^#/, "");
+  const expanded = normalized.length === 3
+    ? normalized.split("").map((channel) => channel + channel).join("")
+    : normalized;
+  return Number.parseInt(expanded, 16) / 255;
+}
+
+function relativeLuminance(color) {
+  const normalized = color.replace(/^#/, "");
+  const channels = [0, 2, 4].map((offset) => channelValue(normalized.slice(offset, offset + 2)));
+  return channels.reduce((sum, channel, index) => sum + (channel <= 0.03928
+    ? channel / 12.92
+    : ((channel + 0.055) / 1.055) ** 2.4) * [0.2126, 0.7152, 0.0722][index], 0);
+}
+
+export function contrastRatio(foreground, background) {
+  const foregroundLuminance = relativeLuminance(foreground);
+  const backgroundLuminance = relativeLuminance(background);
+  const lighter = Math.max(foregroundLuminance, backgroundLuminance);
+  const darker = Math.min(foregroundLuminance, backgroundLuminance);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function graphPalette(container) {
+  if (typeof getComputedStyle === "function") {
+    const theme = getComputedStyle(container).getPropertyValue("--graph-theme").trim();
+    if (theme === "dark") {
+      return GRAPH_PALETTES.dark;
+    }
+  }
+  return GRAPH_PALETTES.light;
+}
+
+function graphStyle(palette) {
+  const baseNode = {
+    "background-color": palette.nodeFills.resource,
+    color: palette.nodeLabel,
+    label: "data(label)",
+    "font-family": "system-ui, sans-serif",
+    "font-size": "11px",
+    "text-wrap": "wrap",
+    "text-max-width": "110px",
+    "text-valign": "center",
+    "text-halign": "center",
+    width: 30,
+    height: 30,
+    "border-width": 2,
+    "border-color": palette.labelBackground,
+  };
+
+  return [
+    { selector: "node", style: baseNode },
+    {
+      selector: "node.literal",
+      style: {
+        shape: "round-rectangle",
+        "background-color": palette.nodeFills.literal,
+        color: palette.nodeLabel,
+        width: 38,
+        height: 25,
+      },
     },
-  },
-  {
-    selector: "node.literal",
-    style: {
-      shape: "round-rectangle",
-      "background-color": "#bf6545",
-      color: "#fffaf0",
-      width: 38,
-      height: 25,
+    { selector: "node.class", style: { "background-color": palette.nodeFills.class } },
+    { selector: "node.property", style: { "background-color": palette.nodeFills.property } },
+    { selector: "node.ontology", style: { "background-color": palette.nodeFills.ontology } },
+    { selector: "node.individual", style: { "background-color": palette.nodeFills.individual } },
+    { selector: "node.datatype", style: { "background-color": palette.nodeFills.datatype } },
+    {
+      selector: "edge",
+      style: {
+        width: 1.5,
+        "line-color": palette.edge,
+        "target-arrow-color": palette.edge,
+        "target-arrow-shape": "triangle",
+        "curve-style": "bezier",
+        label: "data(label)",
+        color: palette.labelInk,
+        "font-family": "system-ui, sans-serif",
+        "font-size": "9px",
+        "text-background-color": palette.labelBackground,
+        "text-background-opacity": 1,
+        "text-background-padding": "2px",
+        "text-rotation": "autorotate",
+      },
     },
-  },
-  {
-    selector: "node.class",
-    style: { "background-color": "#386f83" },
-  },
-  {
-    selector: "node.property",
-    style: { "background-color": "#725c88" },
-  },
-  {
-    selector: "node.ontology",
-    style: { "background-color": "#68744d" },
-  },
-  {
-    selector: "node.individual",
-    style: { "background-color": "#8c6f43" },
-  },
-  {
-    selector: "node.datatype",
-    style: { "background-color": "#8a5b61" },
-  },
-  {
-    selector: "edge",
-    style: {
-      width: 1.5,
-      "line-color": "#9a8d76",
-      "target-arrow-color": "#9a8d76",
-      "target-arrow-shape": "triangle",
-      "curve-style": "bezier",
-      label: "data(label)",
-      color: "#5d564b",
-      "font-family": "system-ui, sans-serif",
-      "font-size": "9px",
-      "text-background-color": "#f8f4e9",
-      "text-background-opacity": 0.9,
-      "text-background-padding": "2px",
-      "text-rotation": "autorotate",
+    { selector: ".is-dimmed", style: { opacity: 0.18 } },
+    {
+      selector: ".is-selected",
+      style: {
+        opacity: 1,
+        "border-width": 4,
+        "border-color": palette.selected,
+        "line-color": palette.selected,
+        "target-arrow-color": palette.selected,
+        width: 38,
+        height: 38,
+      },
     },
-  },
-  {
-    selector: ".is-dimmed",
-    style: { opacity: 0.18 },
-  },
-  {
-    selector: ".is-selected",
-    style: {
-      opacity: 1,
-      "border-width": 4,
-      "border-color": "#bd4d2d",
-      "line-color": "#bd4d2d",
-      "target-arrow-color": "#bd4d2d",
-      width: 38,
-      height: 38,
-    },
-  },
-];
+  ];
+}
 
 function noop() {}
 
@@ -149,6 +201,9 @@ function markVisibility(cy, visibleNodeIds, visibleAssertionIds) {
 export function createGraphView({ container, onSelect = noop, onError = noop } = {}) {
   let cy = null;
   let lastRender = null;
+  let graphReference = null;
+  let showingLiterals = false;
+  let selectedSelection = null;
 
   function report(error, phase) {
     try {
@@ -162,6 +217,48 @@ export function createGraphView({ container, onSelect = noop, onError = noop } =
     if (cy) {
       cy.destroy();
       cy = null;
+    }
+    graphReference = null;
+  }
+
+  function positionsFor(cytoscapeInstance) {
+    const positions = new Map();
+    cytoscapeInstance?.nodes?.()?.forEach?.((node) => {
+      if (typeof node.position !== "function") {
+        return;
+      }
+      const position = node.position();
+      if (position && Number.isFinite(position.x) && Number.isFinite(position.y)) {
+        positions.set(node.id(), { x: position.x, y: position.y });
+      }
+    });
+    return positions;
+  }
+
+  function restorePositions(cytoscapeInstance, positions) {
+    for (const [id, position] of positions) {
+      const element = cytoscapeInstance.getElementById(id);
+      if (element.nonempty?.() && typeof element.position === "function") {
+        element.position(position);
+      }
+    }
+  }
+
+  function applySelection({ clearWhenEmpty = false } = {}) {
+    if (!cy) {
+      return;
+    }
+    if (!selectedSelection && !clearWhenEmpty) {
+      return;
+    }
+    cy.elements().removeClass("is-selected").unselect();
+    if (!selectedSelection || typeof selectedSelection.id !== "string") {
+      return;
+    }
+    const element = cy.getElementById(selectedSelection.id);
+    const exists = element.nonempty?.() ?? !element.empty?.();
+    if (exists) {
+      element.addClass("is-selected").select();
     }
   }
 
@@ -179,30 +276,42 @@ export function createGraphView({ container, onSelect = noop, onError = noop } =
         throw new TypeError("graph must contain nodes and assertions arrays");
       }
 
-      destroyGraph();
-      container.replaceChildren();
-      cy = cytoscape({
-        container,
-        elements: graphElements(args.graph, args.showLiterals === true),
-        style: STYLE,
-      });
-      cy.on("tap", "node", (event) => {
-        const node = event.target.data("node");
-        if (node) {
-          onSelect({ kind: node.kind, id: node.id });
+      const nextShowLiterals = args.showLiterals === true;
+      const needsRebuild = !cy || graphReference !== args.graph || showingLiterals !== nextShowLiterals;
+      if (needsRebuild) {
+        const positions = cy && graphReference === args.graph ? positionsFor(cy) : new Map();
+        if (graphReference !== null && graphReference !== args.graph) {
+          selectedSelection = null;
         }
-      });
-      cy.on("tap", "edge", (event) => {
-        onSelect({ kind: "assertion", id: event.target.id() });
-      });
+        destroyGraph();
+        container.replaceChildren();
+        cy = cytoscape({
+          container,
+          elements: graphElements(args.graph, nextShowLiterals),
+          style: graphStyle(graphPalette(container)),
+        });
+        graphReference = args.graph;
+        showingLiterals = nextShowLiterals;
+        cy.on("tap", "node", (event) => {
+          const node = event.target.data("node");
+          if (node) {
+            onSelect({ kind: node.kind, id: node.id });
+          }
+        });
+        cy.on("tap", "edge", (event) => {
+          onSelect({ kind: "assertion", id: event.target.id() });
+        });
+        cy.layout({
+          name: "cose",
+          animate: false,
+          fit: true,
+          padding: 24,
+          randomize: positions.size === 0,
+        }).run();
+        restorePositions(cy, positions);
+      }
       markVisibility(cy, args.visibleNodeIds, args.visibleAssertionIds);
-      cy.layout({
-        name: "cose",
-        animate: false,
-        fit: true,
-        padding: 24,
-        randomize: true,
-      }).run();
+      applySelection();
       return cy;
     } catch (error) {
       destroyGraph();
@@ -213,17 +322,10 @@ export function createGraphView({ container, onSelect = noop, onError = noop } =
 
   function select(selection) {
     try {
-      if (!cy) {
-        return;
-      }
-      cy.elements().removeClass("is-selected").unselect();
-      if (!selection || typeof selection.id !== "string") {
-        return;
-      }
-      const element = cy.getElementById(selection.id);
-      if (element.nonempty()) {
-        element.addClass("is-selected").select();
-      }
+      selectedSelection = selection && typeof selection.id === "string"
+        ? { kind: selection.kind, id: selection.id }
+        : null;
+      applySelection({ clearWhenEmpty: true });
     } catch (error) {
       report(error, "selection");
     }
@@ -232,6 +334,7 @@ export function createGraphView({ container, onSelect = noop, onError = noop } =
   function fit() {
     try {
       if (cy) {
+        cy.resize?.();
         cy.fit(undefined, 24);
       }
     } catch (error) {
@@ -246,6 +349,7 @@ export function createGraphView({ container, onSelect = noop, onError = noop } =
         markVisibility(cy, lastRender?.visibleNodeIds, lastRender?.visibleAssertionIds);
         cy.fit(undefined, 24);
       }
+      selectedSelection = null;
     } catch (error) {
       report(error, "reset");
     }
@@ -264,6 +368,7 @@ export function createGraphView({ container, onSelect = noop, onError = noop } =
       target.union(target.neighborhood()).removeClass("is-dimmed");
       cy.elements().removeClass("is-selected").unselect();
       target.addClass("is-selected").select();
+      selectedSelection = { kind: selection.kind, id: selection.id };
     } catch (error) {
       report(error, "focus");
     }
@@ -279,6 +384,7 @@ export function createGraphView({ container, onSelect = noop, onError = noop } =
   function destroy() {
     destroyGraph();
     lastRender = null;
+    selectedSelection = null;
   }
 
   return { render, select, fit, reset, focusNeighborhood, retry, destroy };

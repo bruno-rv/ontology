@@ -72,6 +72,31 @@ function assertNonEmptyIri(value, location, description) {
   }
 }
 
+function assertPredicateIri(value, location) {
+  if (typeof value !== "string" || value.trim() === "" || /\s/.test(value)) {
+    fail(location, "predicate must be a valid absolute IRI");
+  }
+
+  const schemeMatch = value.match(/^[A-Za-z][A-Za-z\d+.-]*:/);
+  if (!schemeMatch) {
+    fail(location, "predicate must be a valid absolute IRI");
+  }
+  if (value.slice(schemeMatch[0].length) === "") {
+    fail(location, "predicate must be a valid absolute IRI");
+  }
+
+  if (schemeMatch[0].toLowerCase() === "http:" || schemeMatch[0].toLowerCase() === "https:") {
+    try {
+      const parsed = new URL(value);
+      if (!parsed.hostname) {
+        fail(location, "predicate must be a valid absolute IRI");
+      }
+    } catch {
+      fail(location, "predicate must be a valid absolute IRI");
+    }
+  }
+}
+
 function validateLiteral(value, location) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     fail(location, "value must be an object containing @id or @value");
@@ -162,6 +187,9 @@ export function normalizeJsonLd(document, { version, sourceUrl }) {
     predicateEntries.forEach(([predicate, values]) => {
       if (predicate.startsWith("@") && predicate !== "@type") {
         fail(sourceLocation(recordIndex, subjectIri, predicate), `unknown keyword ${predicate}`);
+      }
+      if (predicate !== "@type") {
+        assertPredicateIri(predicate, sourceLocation(recordIndex, subjectIri, predicate));
       }
       if (!Array.isArray(values)) {
         fail(

@@ -25,6 +25,15 @@ const FACET_KEYS = [
 
 const DEFAULT_GRAPH_FALLBACK = "The graph is an interaction aid. Use the catalog and details below to inspect every asserted value if the canvas is unavailable.";
 const ALLOWED_SOURCE_STRINGS = new Set(["../1.0/dh-atlas.jsonld", "../2.0/dh-atlas.jsonld"]);
+export const FILE_PROTOCOL_REMEDY = "file:// is not supported because browsers block local JSON fetches. Run python3 -m http.server 4173 --bind 127.0.0.1, then open http://127.0.0.1:4173/visualization/.";
+
+export function isNarrowGraphViewport(width) {
+  return Number.isFinite(width) && width < 768;
+}
+
+export function releaseFailureMessage(requestedLabel, retainedLabel, error) {
+  return `${requestedLabel} failed to load: ${readableError(error)}. ${retainedLabel} remains displayed.`;
+}
 
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -124,6 +133,9 @@ function readableError(error) {
 }
 
 async function fetchJson(url, description) {
+  if (new URL(url).protocol === "file:") {
+    throw new Error(FILE_PROTOCOL_REMEDY);
+  }
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`${description} returned HTTP ${response.status}`);
@@ -145,7 +157,10 @@ function createReferences(root) {
     facetForm: get("facet-form"),
     facetOptions: Object.fromEntries(FACET_KEYS.map((key) => [key, get(`facet-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}-options`)])),
     graphCanvas: get("graph-canvas"),
+    graphOverview: get("graph-overview"),
+    graphDisclosure: get("graph-disclosure"),
     graphFallback: get("graph-fallback"),
+    graphError: get("graph-error"),
     graphToolbar: get("graph-toolbar"),
     graphFit: get("graph-fit"),
     graphReset: get("graph-reset"),
@@ -184,9 +199,22 @@ export function initializeApplication(root = document) {
     selection: null,
     results: [],
     showLiterals: false,
+    graphOverviewExpanded: false,
     loadToken: 0,
     graphError: null,
   };
+
+  function syncGraphDisclosure() {
+    if (!refs.graphOverview || !refs.graphDisclosure) {
+      return;
+    }
+    const viewportWidth = root.defaultView?.innerWidth ?? globalThis.innerWidth;
+    const narrow = isNarrowGraphViewport(viewportWidth);
+    refs.graphDisclosure.hidden = !narrow;
+    refs.graphDisclosure.setAttribute("aria-expanded", String(!narrow || state.graphOverviewExpanded));
+    refs.graphDisclosure.textContent = state.graphOverviewExpanded ? "Hide graph overview" : "Show graph overview";
+    refs.graphOverview.hidden = narrow && !state.graphOverviewExpanded;
+  }
 
   function announce(message) {
     refs.loadStatus.textContent = message;
@@ -219,14 +247,58 @@ export function initializeApplication(root = document) {
     return state.results.some((result) => selectionKey(selectionForResult(result)) === selectionKey(state.selection));
   }
 
-  function resetSelection() {
+  function resetSelection({ render = true } = {}) {
     state.selection = null;
     emptyDetails(refs.detailsContent);
     graphView.select(null);
-    renderCatalog();
+    if (render) {
+      renderCatalog();
+    }
   }
 
-  function renderFacets() {
+  function captureFocusTarget() {
+    const active = document.activeElement;
+    if (active?.matches?.("input[data-facet]")) {
+      return {
+        kind: "facet",
+        facet: active.dataset.facet,
+        value: active.dataset.value,
+      };
+    }
+    if (active?.matches?.("button.catalog-result")) {
+      return {
+        kind: "catalog",
+        selection: `${active.dataset.kind}:${active.dataset.itemId}`,
+      };
+    }
+    return null;
+  }
+
+  function restoreFocusTarget(target) {
+    if (!target) {
+      return;
+    }
+    if (target.kind === "facet") {
+      const input = [...(refs.facetForm?.querySelectorAll("input[data-facet]") ?? [])]
+        .find((candidate) => candidate.dataset.facet === target.facet && candidate.dataset.value === target.value);
+      input?.focus();
+      return;
+    }
+    if (target.kind === "catalog") {
+      const button = [...refs.resultCatalog.querySelectorAll("button.catalog-result")]
+        .find((candidate) => `${candidate.dataset.kind}:${candidate.dataset.itemId}` === target.selection);
+      button?.focus();
+    }
+  }
+
+  function focusCatalogSelection(selection) {
+    const selected = selectionKey(selection);
+    const button = [...refs.resultCatalog.querySelectorAll("button.catalog-result")]
+      .find((candidate) => `${candidate.dataset.kind}:${candidate.dataset.itemId}` === selected);
+    button?.focus();
+  }
+
+  function renderFacets({ focusTarget = captureFocusTarget() } = {}) {
     const options = state.index ? facetOptions(state.index) : {};
     for (const key of FACET_KEYS) {
       const container = refs.facetOptions[key];
@@ -248,33 +320,41 @@ export function initializeApplication(root = document) {
         container.append(label);
       }
     }
+    restoreFocusTarget(focusTarget);
   }
 
-  function renderCatalog() {
+  function renderCatalog({ focusTarget = captureFocusTarget() } = {}) {
     refs.resultCatalog.replaceChildren();
     refs.resultCount.textContent = `${state.results.length} result${state.results.length === 1 ? "" : "s"}`;
     refs.catalogEmpty.hidden = state.results.length !== 0;
     const selected = selectionKey(state.selection);
     for (const result of state.results) {
       const selection = selectionForResult(result);
-      const item = document.createElement("li");
-      item.setAttribute("role", "option");
-      item.setAttribute("aria-selected", String(selectionKey(selection) === selected));
       const button = document.createElement("button");
       button.type = "button";
+      button.setAttribute("role", "option");
+      button.setAttribute("aria-selected", String(selectionKey(selection) === selected));
       button.className = "catalog-result";
       button.dataset.kind = result.kind;
       button.dataset.itemId = result.id;
-      button.tabIndex = selectionKey(selection) === selected || (!selected && state.results[0] === result) ? 0 : -1;
+      const isSelected = selectionKey(selection) === selected;
+      button.dataset.selected = String(isSelected);
+      button.tabIndex = isSelected || (!selected && state.results[0] === result) ? 0 : -1;
       button.setAttribute("aria-label", `${result.kind}: ${result.displayLabel ?? result.label}`);
+      const selectedIndicator = document.createElement("span");
+      selectedIndicator.className = "catalog-selected-indicator";
+      selectedIndicator.textContent = isSelected ? "Selected" : "";
+      selectedIndicator.setAttribute("aria-hidden", "true");
       const kind = document.createElement("span");
       kind.className = "catalog-kind";
       kind.textContent = result.kind;
       const label = document.createElement("span");
       label.className = "catalog-label";
       label.textContent = result.displayLabel ?? result.label;
-      button.append(kind, label);
-      button.addEventListener("click", () => applySelection(selection));
+      button.append(selectedIndicator, kind, label);
+      button.addEventListener("click", () => applySelection(selection, {
+        focusTarget: { kind: "catalog", selection: selectionKey(selection) },
+      }));
       button.addEventListener("keydown", (event) => {
         const buttons = [...refs.resultCatalog.querySelectorAll("button.catalog-result")];
         const index = buttons.indexOf(button);
@@ -296,9 +376,9 @@ export function initializeApplication(root = document) {
           buttons[nextIndex].focus();
         }
       });
-      item.append(button);
-      refs.resultCatalog.append(item);
+      refs.resultCatalog.append(button);
     }
+    restoreFocusTarget(focusTarget);
   }
 
   function renderGraph() {
@@ -310,21 +390,24 @@ export function initializeApplication(root = document) {
       showLiterals: state.showLiterals,
     });
     refs.graphCanvas.setAttribute("aria-busy", "false");
+    graphView.select(state.selection);
     if (rendered && state.graphError) {
       clearGraphError();
     }
   }
 
-  function refresh() {
+  function refresh({ focusTarget = captureFocusTarget() } = {}) {
     if (!state.index) {
       return;
     }
     state.results = queryExplorer(state.index, state.filters);
     if (!currentSelectionIsVisible()) {
-      resetSelection();
+      state.selection = null;
+      emptyDetails(refs.detailsContent);
+      graphView.select(null);
     }
-    renderFacets();
-    renderCatalog();
+    renderFacets({ focusTarget });
+    renderCatalog({ focusTarget });
     renderGraph();
   }
 
@@ -356,7 +439,7 @@ export function initializeApplication(root = document) {
     announce(copied ? `Copied ${text}` : `Unable to copy ${text}`);
   }
 
-  function applySelection(selection) {
+  function applySelection(selection, { focusTarget = null } = {}) {
     if (!state.graph || !selection || typeof selection.id !== "string") {
       return;
     }
@@ -370,7 +453,8 @@ export function initializeApplication(root = document) {
         onSelect: applySelection,
       });
       graphView.select(state.selection);
-      renderCatalog();
+      renderCatalog({ focusTarget });
+      focusCatalogSelection(state.selection);
       announce(`Selected ${selection.kind}`);
     } catch (error) {
       showError(error);
@@ -388,9 +472,9 @@ export function initializeApplication(root = document) {
   function onGraphError(error) {
     state.graphError = error;
     refs.graphFallback.textContent = "The graph canvas is unavailable. Catalog and details remain available.";
-    announce(readableError(error));
-    refs.loadError.hidden = false;
-    refs.loadError.textContent = readableError(error);
+    refs.graphError.hidden = false;
+    refs.graphError.textContent = readableError(error);
+    announce(`Graph error: ${readableError(error)}`);
     let retryButton = refs.graphToolbar.querySelector("#graph-retry");
     if (!retryButton) {
       retryButton = document.createElement("button");
@@ -410,9 +494,12 @@ export function initializeApplication(root = document) {
   function clearGraphError() {
     state.graphError = null;
     refs.graphFallback.textContent = DEFAULT_GRAPH_FALLBACK;
+    refs.graphError.hidden = true;
+    refs.graphError.textContent = "";
     refs.graphToolbar.querySelector("#graph-retry")?.remove();
-    clearError();
-    announce(state.config ? `${state.config.label} loaded: ${state.graph.subjects} subjects / ${state.graph.assertions.length} assertions.` : "Graph available.");
+    if (refs.loadError.hidden) {
+      announce(state.config ? `${state.config.label} loaded: ${state.graph.subjects} subjects / ${state.graph.assertions.length} assertions.` : "Graph available.");
+    }
   }
 
   function onFacetChange(event) {
@@ -427,7 +514,13 @@ export function initializeApplication(root = document) {
     } else {
       state.filters[key].delete(value);
     }
-    refresh();
+    refresh({
+      focusTarget: {
+        kind: "facet",
+        facet: input.dataset.facet,
+        value: input.dataset.value,
+      },
+    });
   }
 
   async function loadRelease(config) {
@@ -447,6 +540,11 @@ export function initializeApplication(root = document) {
       state.sourceDocument = document;
       state.index = index;
       state.config = config;
+      refs.versionSelect.value = config.id;
+      const query = refs.searchInput.value;
+      state.filters = defaultFilters();
+      state.filters.query = query;
+      resetSelection({ render: false });
       refs.subjectCount.textContent = String(graph.subjects);
       refs.assertionCount.textContent = String(graph.assertions.length);
       announce(`${config.label} loaded: ${graph.subjects} subjects / ${graph.assertions.length} assertions.`);
@@ -455,7 +553,12 @@ export function initializeApplication(root = document) {
       if (token !== state.loadToken) {
         return;
       }
-      showError(error, { preserveState: Boolean(state.graph) });
+      if (state.config) {
+        refs.versionSelect.value = state.config.id;
+        showError(new Error(releaseFailureMessage(config.label, state.config.label, error)), { preserveState: true });
+      } else {
+        showError(error, { preserveState: false });
+      }
     }
   }
 
@@ -494,11 +597,19 @@ export function initializeApplication(root = document) {
       if (!config) {
         return;
       }
-      state.filters = defaultFilters();
-      state.filters.query = refs.searchInput.value;
-      resetSelection();
+      if (state.config) {
+        refs.versionSelect.value = state.config.id;
+      }
       loadRelease(config);
     });
+    refs.graphDisclosure?.addEventListener("click", () => {
+      state.graphOverviewExpanded = !state.graphOverviewExpanded;
+      syncGraphDisclosure();
+      if (state.graphOverviewExpanded) {
+        graphView.fit();
+      }
+    });
+    root.defaultView?.addEventListener("resize", syncGraphDisclosure);
     refs.graphFit?.addEventListener("click", () => graphView.fit());
     refs.graphReset?.addEventListener("click", () => {
       graphView.reset();
@@ -527,11 +638,16 @@ export function initializeApplication(root = document) {
     onError: onGraphError,
   });
   wireEvents();
+  syncGraphDisclosure();
   emptyDetails(refs.detailsContent);
 
   const ready = (async () => {
     try {
-      const manifestUrl = new URL("versions.json", document.baseURI);
+      const baseUrl = new URL(root.baseURI ?? document.baseURI);
+      if (baseUrl.protocol === "file:") {
+        throw new Error(FILE_PROTOCOL_REMEDY);
+      }
+      const manifestUrl = new URL("versions.json", baseUrl.href);
       const manifest = await fetchJson(manifestUrl.href, "Version manifest");
       state.manifestUrl = manifestUrl;
       state.versions = validateVersionsManifest(manifest);

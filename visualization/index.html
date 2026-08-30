@@ -103,8 +103,12 @@
                 <button class="button button-subtle" id="graph-focus-neighborhood" data-action="focus-neighborhood" type="button">Focus neighborhood</button>
               </div>
             </div>
-            <div class="graph-canvas" id="graph-canvas" role="img" aria-label="Ontology relationship graph" tabindex="0"></div>
-            <p class="graph-fallback" id="graph-fallback">The graph is an interaction aid. Use the catalog and details below to inspect every asserted value if the canvas is unavailable.</p>
+            <button class="button button-subtle graph-disclosure" id="graph-disclosure" type="button" aria-expanded="false" aria-controls="graph-overview">Show graph overview</button>
+            <div class="graph-overview" id="graph-overview">
+              <div class="graph-canvas" id="graph-canvas" role="img" aria-label="Ontology relationship graph" tabindex="0"></div>
+              <p class="graph-fallback" id="graph-fallback">The graph is an interaction aid. Use the catalog and details below to inspect every asserted value if the canvas is unavailable.</p>
+            </div>
+            <p class="error graph-error" id="graph-error" role="alert" aria-live="assertive" aria-atomic="true" hidden></p>
           </section>
 
           <section class="catalog-panel" id="catalog-panel" aria-labelledby="catalog-heading">
@@ -116,7 +120,7 @@
               <p class="result-count" id="result-count" aria-live="polite">Not loaded</p>
             </div>
             <p class="catalog-help" id="catalog-help">Use arrow keys to move through results; press Enter to inspect one.</p>
-            <ul class="result-catalog" id="result-catalog" role="listbox" aria-label="Ontology search results" aria-describedby="catalog-help"></ul>
+            <div class="result-catalog" id="result-catalog" role="listbox" aria-label="Ontology search results" aria-describedby="catalog-help"></div>
             <p class="empty-state" id="catalog-empty" hidden>No results match the current search and facets.</p>
           </section>
         </section>
@@ -140,6 +144,15 @@
     <noscript>
       <p class="noscript-message">This explorer needs JavaScript for search and graph interactions. The checked-in JSON-LD releases remain available in the <a href="../2.0/dh-atlas.jsonld">source files</a>.</p>
     </noscript>
+    <script>
+      if (window.location.protocol === "file:") {
+        const message = "file:// is not supported because browsers block local JSON fetches. Run python3 -m http.server 4173 --bind 127.0.0.1, then open http://127.0.0.1:4173/visualization/.";
+        document.querySelector("#load-status").textContent = `Error: ${message}`;
+        const error = document.querySelector("#load-error");
+        error.textContent = message;
+        error.hidden = false;
+      }
+    </script>
     <script src="assets/vendor/cytoscape.min.js"></script>
     <script type="module" src="assets/app.mjs"></script>
   </body>
