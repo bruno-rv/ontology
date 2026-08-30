@@ -56,6 +56,7 @@ for (const [version, relativePath, subjects, assertions] of cases) {
     assert.equal(graph.subjects, subjects);
     assert.equal(graph.assertions.length, assertions);
     assert.equal(new Set(graph.assertions.map(({ id }) => id)).size, assertions);
+    assert.deepEqual(assertionMultiset(graph.assertions), flattenSourceMultiset(source));
   });
 }
 
@@ -69,7 +70,7 @@ test("type values become rdf:type assertions without rewriting IRIs", () => {
 });
 ```
 
-Add focused fixtures proving:
+Implement `flattenSourceMultiset` only in the test file with a hand-auditable expansion of `@type` and predicate arrays, and compare sorted literal tuples rather than calling production helpers. Add focused fixtures proving:
 
 - duplicate equal literal values create distinct assertion and literal-node IDs;
 - literal lexical value, language, and datatype survive unchanged;
@@ -357,7 +358,7 @@ git commit -m "feat: add accessible ontology explorer shell"
 **Files:**
 - Create: `visualization/assets/graph-view.mjs`
 - Create: `visualization/assets/app.mjs`
-- Create: `visualization/tests/static-contract.test.mjs`
+- Create: `visualization/tests/app.test.mjs`
 - Create: `visualization/README.md`
 - Modify: `README.md`
 
@@ -365,18 +366,17 @@ git commit -m "feat: add accessible ontology explorer shell"
 - Consumes: Tasks 1–3 exports and the stable DOM contract.
 - Produces: `createGraphView({ container, onSelect, onError })`, plus the complete browser application initialized by `app.mjs`.
 
-- [ ] **Step 1: Write a static integration contract test**
+- [ ] **Step 1: Write application configuration and integrity behavior tests**
 
-Read the shipped files as text/JSON and assert:
+Import `validateVersionsManifest` and `assertGraphIntegrity` from the not-yet-created `app.mjs`. Read the real `versions.json` and canonical JSON-LD files, normalize each configured release, and assert:
 
-- both version entries and exact integrity counts exist;
-- every DOM ID consumed by `app.mjs` exists once in `index.html`;
-- the Cytoscape script precedes the module script;
-- the vendor and license files exist and the license records version `3.34.2` and its SHA-256;
-- the root and visualization READMEs contain the exact local serving command and `/visualization/` URL;
-- no CDN URL is present in the application shell.
+- the manifest returns exactly the configured 1.0 and 2.0 releases;
+- each configured source path resolves to a canonical JSON-LD document;
+- each normalized graph passes its configured subject and assertion integrity counts;
+- malformed manifests, duplicate release IDs, missing source paths, and non-positive expected counts fail clearly;
+- subject or assertion count mismatch fails without modifying the last accepted graph.
 
-Run it before implementation and confirm it fails because Task 4 files/documentation do not exist.
+Derive expected values from hand-written test literals, not from production helpers. Run the test before implementation and confirm it fails because `app.mjs` does not exist. HTML semantics, script ordering, license presentation, documentation, and CDN absence are reviewed through the real browser artifact and the task review rather than source-grep tests.
 
 - [ ] **Step 2: Implement the Cytoscape adapter**
 
@@ -409,7 +409,7 @@ Requirements:
 
 - [ ] **Step 3: Implement application orchestration**
 
-`app.mjs` must:
+`app.mjs` must export pure `validateVersionsManifest(manifest)` and `assertGraphIntegrity(graph, versionConfig)` functions for the configuration tests, then:
 
 1. fetch and validate `versions.json`;
 2. populate and load the selected release;
@@ -472,7 +472,7 @@ Capture screenshots at desktop and narrow widths for visual inspection, but do n
 - [ ] **Step 7: Commit Task 4**
 
 ```bash
-git add visualization/assets/graph-view.mjs visualization/assets/app.mjs visualization/tests/static-contract.test.mjs visualization/README.md README.md
+git add visualization/assets/graph-view.mjs visualization/assets/app.mjs visualization/tests/app.test.mjs visualization/README.md README.md
 git commit -m "feat: deliver interactive ontology explorer"
 ```
 
