@@ -1,7 +1,7 @@
 # ATLAS Ontology Explorer Design
 
-**Status:** Approved for implementation  
-**Date:** 2026-08-30  
+**Status:** Approved for implementation
+**Date:** 2026-08-30
 **Target:** A source-faithful, static visualization for ATLAS ontology versions 1.0 and 2.0
 
 ## Purpose
