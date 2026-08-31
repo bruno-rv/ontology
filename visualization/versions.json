@@ -1,0 +1,18 @@
+{
+  "versions": [
+    {
+      "id": "1.0",
+      "label": "Version 1.0",
+      "source": "../1.0/dh-atlas.jsonld",
+      "expectedSubjects": 89,
+      "expectedAssertions": 348
+    },
+    {
+      "id": "2.0",
+      "label": "Version 2.0",
+      "source": "../2.0/dh-atlas.jsonld",
+      "expectedSubjects": 82,
+      "expectedAssertions": 375
+    }
+  ]
+}

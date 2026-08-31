@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A source-faithful explorer for the ATLAS Ontology releases.">
+    <title>ATLAS Ontology Explorer</title>
+    <link rel="stylesheet" href="assets/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" id="skip-link" href="#main-content">Skip to explorer</a>
+
+    <div class="app-shell" id="app">
+      <header class="site-header" id="site-header">
+        <div class="masthead">
+          <p class="eyebrow">Digital humanities · source atlas</p>
+          <h1>ATLAS Ontology Explorer</h1>
+          <p class="lede">Read the asserted vocabulary and its relationships across releases.</p>
+        </div>
+
+        <div class="release-controls">
+          <label for="version-select">Ontology release</label>
+          <select id="version-select" name="version" autocomplete="off">
+            <option value="1.0">Version 1.0</option>
+            <option value="2.0" selected>Version 2.0</option>
+          </select>
+          <dl class="counts" aria-label="Loaded ontology counts">
+            <div>
+              <dt>Subjects</dt>
+              <dd id="subject-count">Not loaded</dd>
+            </div>
+            <div>
+              <dt>Assertions</dt>
+              <dd id="assertion-count">Not loaded</dd>
+            </div>
+          </dl>
+        </div>
+
+        <form class="search-form" id="search-form" role="search">
+          <label for="global-search">Search the release</label>
+          <div class="search-row">
+            <input id="global-search" name="query" type="search" placeholder="IRI, predicate, label, value…" autocomplete="off" spellcheck="false">
+            <button class="button button-subtle" id="clear-search" type="reset">Clear search</button>
+          </div>
+        </form>
+
+        <div class="status-stack">
+          <p class="status" id="load-status" role="status" aria-live="polite" aria-atomic="true">Choose a release to begin.</p>
+          <p class="error" id="load-error" role="alert" aria-live="assertive" aria-atomic="true" hidden></p>
+        </div>
+      </header>
+
+      <main id="main-content" class="main-content" tabindex="-1">
+        <aside class="facet-rail" id="facet-rail" aria-labelledby="facets-heading">
+          <div class="section-heading">
+            <p class="eyebrow">Catalog lenses</p>
+            <h2 id="facets-heading">Filter asserted data</h2>
+          </div>
+          <form id="facet-form">
+            <fieldset id="facet-kinds" data-facet="kinds">
+              <legend>Kind</legend>
+              <div class="facet-options" id="facet-kinds-options" data-facet-options="kinds" aria-live="polite"></div>
+            </fieldset>
+            <fieldset id="facet-declared" data-facet="declared">
+              <legend>Declaration</legend>
+              <div class="facet-options" id="facet-declared-options" data-facet-options="declared" aria-live="polite"></div>
+            </fieldset>
+            <fieldset id="facet-namespaces" data-facet="namespaces">
+              <legend>Namespace</legend>
+              <div class="facet-options" id="facet-namespaces-options" data-facet-options="namespaces" aria-live="polite"></div>
+            </fieldset>
+            <fieldset id="facet-rdf-types" data-facet="rdfTypes">
+              <legend>RDF type</legend>
+              <div class="facet-options" id="facet-rdf-types-options" data-facet-options="rdfTypes" aria-live="polite"></div>
+            </fieldset>
+            <fieldset id="facet-predicates" data-facet="predicates">
+              <legend>Predicate</legend>
+              <div class="facet-options" id="facet-predicates-options" data-facet-options="predicates" aria-live="polite"></div>
+            </fieldset>
+            <fieldset id="facet-datatypes" data-facet="datatypes">
+              <legend>Datatype</legend>
+              <div class="facet-options" id="facet-datatypes-options" data-facet-options="datatypes" aria-live="polite"></div>
+            </fieldset>
+            <fieldset id="facet-languages" data-facet="languages">
+              <legend>Language</legend>
+              <div class="facet-options" id="facet-languages-options" data-facet-options="languages" aria-live="polite"></div>
+            </fieldset>
+            <button class="button button-subtle" id="clear-filters" type="reset">Reset filters</button>
+          </form>
+        </aside>
+
+        <section class="explorer-column" id="explorer-column" aria-label="Ontology explorer">
+          <section class="graph-panel" id="graph-panel" aria-labelledby="graph-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Relational overview</p>
+                <h2 id="graph-heading">Graph canvas</h2>
+              </div>
+              <div class="graph-toolbar" id="graph-toolbar" aria-label="Graph controls">
+                <button class="button button-subtle" id="graph-fit" data-action="fit" type="button">Fit graph</button>
+                <button class="button button-subtle" id="graph-reset" data-action="reset" type="button">Reset view</button>
+                <button class="button button-subtle" id="graph-show-values" data-action="show-values" type="button" aria-pressed="false">Show values</button>
+                <button class="button button-subtle" id="graph-focus-neighborhood" data-action="focus-neighborhood" type="button">Focus neighborhood</button>
+              </div>
+            </div>
+            <button class="button button-subtle graph-disclosure" id="graph-disclosure" type="button" aria-expanded="false" aria-controls="graph-overview">Show graph overview</button>
+            <div class="graph-overview" id="graph-overview">
+              <div class="graph-canvas" id="graph-canvas" role="img" aria-label="Ontology relationship graph" tabindex="0"></div>
+              <p class="graph-fallback" id="graph-fallback">The graph is an interaction aid. Use the catalog and details below to inspect every asserted value if the canvas is unavailable.</p>
+            </div>
+            <p class="error graph-error" id="graph-error" role="alert" aria-live="assertive" aria-atomic="true" hidden></p>
+          </section>
+
+          <section class="catalog-panel" id="catalog-panel" aria-labelledby="catalog-heading">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Source index</p>
+                <h2 id="catalog-heading">Result catalog</h2>
+              </div>
+              <p class="result-count" id="result-count" aria-live="polite">Not loaded</p>
+            </div>
+            <p class="catalog-help" id="catalog-help">Use arrow keys to move through results; press Enter to inspect one.</p>
+            <div class="result-catalog" id="result-catalog" role="listbox" aria-label="Ontology search results" aria-describedby="catalog-help"></div>
+            <p class="empty-state" id="catalog-empty" hidden>No results match the current search and facets.</p>
+          </section>
+        </section>
+
+        <aside class="details-dock" id="details-dock" aria-labelledby="details-region-heading">
+          <div class="section-heading">
+            <p class="eyebrow">Source record</p>
+            <h2 id="details-region-heading">Selected details</h2>
+          </div>
+          <div class="details-content" id="details-content" tabindex="-1" aria-live="polite">
+            <p class="empty-state" id="details-empty">Select a resource, literal, or assertion from the catalog.</p>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="site-footer">
+        <p>Asserted RDF only. Full IRIs and source positions remain canonical.</p>
+      </footer>
+    </div>
+
+    <noscript>
+      <p class="noscript-message">This explorer needs JavaScript for search and graph interactions. The checked-in JSON-LD releases remain available in the <a href="../2.0/dh-atlas.jsonld">source files</a>.</p>
+    </noscript>
+    <script>
+      if (window.location.protocol === "file:") {
+        const message = "file:// is not supported because browsers block local JSON fetches. Run python3 -m http.server 4173 --bind 127.0.0.1, then open http://127.0.0.1:4173/visualization/.";
+        document.querySelector("#load-status").textContent = `Error: ${message}`;
+        const error = document.querySelector("#load-error");
+        error.textContent = message;
+        error.hidden = false;
+      }
+    </script>
+    <script src="assets/vendor/cytoscape.min.js"></script>
+    <script type="module" src="assets/app.mjs"></script>
+  </body>
+</html>
