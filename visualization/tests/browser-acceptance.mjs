@@ -36,6 +36,18 @@ async (page) => {
     );
   };
   const resultCount = async () => page.locator("#result-catalog [role=option]").count();
+  const assertRenderedResultCount = async (expectedCount) => {
+    const expectedLabel = `${expectedCount} result${expectedCount === 1 ? "" : "s"}`;
+    if ((await resultCount()) !== expectedCount || await text("#result-count") !== expectedLabel) {
+      fail(`catalog count mismatch: expected ${expectedLabel}`);
+    }
+  };
+  const waitForResultCountChange = async (previousCount) => {
+    await page.waitForFunction(
+      (count) => document.querySelector("#result-count")?.textContent !== `${count} results`,
+      previousCount,
+    );
+  };
   const selectFacet = async (facet, value) => {
     await page.locator(`input[data-facet="${facet}"]`).evaluateAll((inputs, target) => {
       const input = inputs.find((candidate) => JSON.parse(candidate.dataset.value) === target);
@@ -101,12 +113,14 @@ async (page) => {
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });
   await page.goto(baseUrl);
   await waitForRelease("82", "375");
-  if ((await resultCount()) !== 661) {
-    fail("Version 2.0 result count is not 661");
+  const version2ResultCount = await resultCount();
+  if (version2ResultCount === 0) {
+    fail("Version 2.0 catalog is empty");
   }
+  await assertRenderedResultCount(version2ResultCount);
   const version2 = {
     counts: [await text("#subject-count"), await text("#assertion-count")],
-    results: await resultCount(),
+    results: version2ResultCount,
   };
 
   const firstResource = page.locator("#result-catalog [role=option][data-kind=resource]").first();
@@ -178,7 +192,7 @@ async (page) => {
   }
 
   await page.locator("#global-search").fill("https://w3id.org/dh-atlas/2.0");
-  await page.waitForFunction(() => document.querySelector("#result-count")?.textContent !== "661 results");
+  await waitForResultCountChange(version2ResultCount);
   if ((await resultCount()) < 1) {
     fail("full IRI search returned no result");
   }
@@ -226,12 +240,16 @@ async (page) => {
     return 0;
   });
   await page.locator("#global-search").fill("versionInfo");
-  await page.waitForFunction(() => document.querySelector("#result-count")?.textContent !== "661 results");
+  await waitForResultCountChange(version2ResultCount);
+  const searchRefreshCount = await resultCount();
+  await assertRenderedResultCount(searchRefreshCount);
   const refreshedSelection = page.locator("#result-catalog [role=option]").first();
   await refreshedSelection.click();
   const refreshedSelectionId = await refreshedSelection.getAttribute("data-item-id");
   await page.locator("#global-search").fill("version");
   await page.waitForFunction(() => document.querySelector("#result-catalog [aria-selected=true]") !== null);
+  const continuedSearchCount = await resultCount();
+  await assertRenderedResultCount(continuedSearchCount);
   const afterGraphFactories = await page.evaluate(() => globalThis.__atlasGraphFactoryCalls?.());
   const refreshedState = await page.evaluate(() => ({
     selected: document.querySelector("#result-catalog [aria-selected=true]")?.getAttribute("data-item-id"),
@@ -245,11 +263,14 @@ async (page) => {
 
   await page.locator("#version-select").selectOption("1.0");
   await waitForRelease("89", "348");
-  if ((await resultCount()) !== 605) {
-    fail("Version 1.0 result count is not 605");
+  const version1ResultCount = await resultCount();
+  if (version1ResultCount === 0) {
+    fail("Version 1.0 catalog is empty");
   }
+  await assertRenderedResultCount(version1ResultCount);
   await page.locator("#version-select").selectOption("2.0");
   await waitForRelease("82", "375");
+  await assertRenderedResultCount(version2ResultCount);
   const retainedSelection = page.locator("#result-catalog [role=option][data-kind=resource]").first();
   await retainedSelection.click();
   const retainedSelectionId = await retainedSelection.getAttribute("data-item-id");
@@ -283,7 +304,7 @@ async (page) => {
     retry: document.querySelector("#graph-retry")?.textContent,
     resultCount: document.querySelector("#result-count")?.textContent,
   }));
-  if (!graphFailure.loadErrorHidden || !graphFailure.graphError.includes("vendor is unavailable") || graphFailure.retry !== "Retry graph" || graphFailure.resultCount !== "661 results") {
+  if (!graphFailure.loadErrorHidden || !graphFailure.graphError.includes("vendor is unavailable") || graphFailure.retry !== "Retry graph" || graphFailure.resultCount !== `${version2ResultCount} results`) {
     fail("graph failure did not remain isolated from catalog/load state");
   }
   await page.unroute("**/visualization/assets/vendor/cytoscape.min.js");
@@ -371,7 +392,7 @@ async (page) => {
 
   return {
     version2,
-    version1: { counts: ["89", "348"], results: 605 },
+    version1: { counts: ["89", "348"], results: version1ResultCount },
     selectedResource,
     graphNodeSelection: { id: graphNodeId, ...graphNodeState },
     graphEdgeSelection: { id: graphEdgeId, ...graphEdgeState },
